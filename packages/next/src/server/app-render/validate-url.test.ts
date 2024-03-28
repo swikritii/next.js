@@ -1,9 +1,9 @@
-import { validateURL } from 'next/dist/server/app-render/validate-url'
+import { validateURL } from './validate-url'
 
 describe('validateUrl', () => {
   it('should return valid pathname', () => {
-    expect(validateURL('/')).toBe('/')
-    expect(validateURL('/abc')).toBe('/abc')
+    expect(validateURL('/').pathname).toBe('/')
+    expect(validateURL('/abc').pathname).toBe('/abc')
   })
 
   it('should throw for invalid pathname', () => {

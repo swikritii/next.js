@@ -1473,8 +1473,7 @@ export const renderToHTMLOrFlight: AppPageRender = (
   query,
   renderOpts
 ) => {
-  // TODO: this includes query string, should it?
-  const pathname = validateURL(req.url)
+  const { pathname } = validateURL(req.url)
 
   return RequestAsyncStorageWrapper.wrap(
     renderOpts.ComponentMod.requestAsyncStorage,
