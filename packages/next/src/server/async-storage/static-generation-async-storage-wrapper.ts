@@ -8,7 +8,11 @@ import { createPrerenderState } from '../../server/app-render/dynamic-rendering'
 import type { FetchMetric } from '../base-http'
 
 export type StaticGenerationContext = {
-  urlPathname: string
+  /**
+   * The URL of the request. This only specifies the pathname and the search
+   * part of the URL. The other parts aren't accepted so they shouldn't be used.
+   */
+  url: { pathname: string; search?: string }
   requestEndedState?: { ended?: boolean }
   renderOpts: {
     incrementalCache?: IncrementalCache
@@ -51,7 +55,7 @@ export const StaticGenerationAsyncStorageWrapper: AsyncStorageWrapper<
 > = {
   wrap<Result>(
     storage: AsyncLocalStorage<StaticGenerationStore>,
-    { urlPathname, renderOpts, requestEndedState }: StaticGenerationContext,
+    { url, renderOpts, requestEndedState }: StaticGenerationContext,
     callback: (store: StaticGenerationStore) => Result
   ): Result {
     /**
@@ -83,7 +87,13 @@ export const StaticGenerationAsyncStorageWrapper: AsyncStorageWrapper<
 
     const store: StaticGenerationStore = {
       isStaticGeneration,
-      urlPathname,
+      // Rather than just using the whole `url` here, we pull the parts we want
+      // to ensure we don't use parts of the URL that we shouldn't. This also
+      // lets us avoid requiring an empty string for `search` in the type.
+      url: {
+        pathname: url.pathname,
+        search: url.search ?? '',
+      },
       pagePath: renderOpts.originalPathname,
       incrementalCache:
         // we fallback to a global incremental cache for edge-runtime locally

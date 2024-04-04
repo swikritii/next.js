@@ -257,7 +257,7 @@ export class AppRouteRouteModule extends RouteModule<
 
     // Get the context for the static generation.
     const staticGenerationContext: StaticGenerationContext = {
-      urlPathname: rawRequest.nextUrl.pathname,
+      url: rawRequest.nextUrl,
       renderOpts: context.renderOpts,
     }
 

@@ -305,7 +305,7 @@ export function unstable_cache<T extends Callback>(
           // when the unstable_cache call is revalidated
           fetchCache: 'force-no-store',
           isUnstableCacheCallback: true,
-          urlPathname: '/',
+          url: { pathname: '/', search: '' },
           isStaticGeneration: false,
           prerenderState: null,
         },

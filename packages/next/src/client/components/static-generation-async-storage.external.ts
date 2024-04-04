@@ -13,7 +13,11 @@ import { staticGenerationAsyncStorage } from './static-generation-async-storage-
 export interface StaticGenerationStore {
   readonly isStaticGeneration: boolean
   readonly pagePath?: string
-  readonly urlPathname: string
+  /**
+   * The URL of the request. This only specifies the pathname and the search
+   * part of the URL. The other parts aren't accepted so they shouldn't be used.
+   */
+  readonly url: { readonly pathname: string; readonly search: string }
   readonly incrementalCache?: IncrementalCache
   readonly isOnDemandRevalidate?: boolean
   readonly isPrerendering?: boolean

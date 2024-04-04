@@ -67,7 +67,6 @@ import {
 import { getSegmentParam } from './get-segment-param'
 import { getScriptNonceFromHeader } from './get-script-nonce-from-header'
 import { parseAndValidateFlightRouterState } from './parse-and-validate-flight-router-state'
-import { validateURL } from './validate-url'
 import { createFlightRouterStateFromLoaderTree } from './create-flight-router-state-from-loader-tree'
 import { handleAction } from './action-handler'
 import { isBailoutToCSRError } from '../../shared/lib/lazy-dynamic/bailout-to-csr'
@@ -110,6 +109,7 @@ import {
 import { createServerModuleMap } from './action-utils'
 import { isNodeNextRequest } from '../base-http/helpers'
 import { parseParameter } from '../../shared/lib/router/utils/route-regex'
+import { parseRelativeUrl } from '../../shared/lib/router/utils/parse-relative-url'
 
 export type GetDynamicParamFromSegment = (
   // [slug] / [[slug]] / [...slug]
@@ -312,7 +312,7 @@ async function generateFlight(
     },
     getDynamicParamFromSegment,
     appUsingSizeAdjustment,
-    staticGenerationStore: { urlPathname },
+    staticGenerationStore: { url },
     query,
     requestId,
     flightRouterState,
@@ -321,7 +321,7 @@ async function generateFlight(
   if (!options?.skipFlight) {
     const [MetadataTree, MetadataOutlet] = createMetadataComponents({
       tree: loaderTree,
-      pathname: urlPathname,
+      pathname: url.pathname,
       trailingSlash: ctx.renderOpts.trailingSlash,
       query,
       getDynamicParamFromSegment,
@@ -434,7 +434,7 @@ async function ReactServerApp({ tree, ctx, asNotFound }: ReactServerAppProps) {
       GlobalError,
       createDynamicallyTrackedSearchParams,
     },
-    staticGenerationStore: { urlPathname },
+    staticGenerationStore: { url },
   } = ctx
   const initialTree = createFlightRouterStateFromLoaderTree(
     tree,
@@ -445,7 +445,7 @@ async function ReactServerApp({ tree, ctx, asNotFound }: ReactServerAppProps) {
   const [MetadataTree, MetadataOutlet] = createMetadataComponents({
     tree,
     errorType: asNotFound ? 'not-found' : undefined,
-    pathname: urlPathname,
+    pathname: url.pathname,
     trailingSlash: ctx.renderOpts.trailingSlash,
     query,
     getDynamicParamFromSegment: getDynamicParamFromSegment,
@@ -481,7 +481,7 @@ async function ReactServerApp({ tree, ctx, asNotFound }: ReactServerAppProps) {
       <AppRouter
         buildId={ctx.renderOpts.buildId}
         assetPrefix={ctx.assetPrefix}
-        initialCanonicalUrl={urlPathname}
+        initialCanonicalUrl={url.pathname + url.search}
         // This is the router state tree.
         initialTree={initialTree}
         // This is the tree of React nodes that are seeded into the cache
@@ -526,14 +526,14 @@ async function ReactServerError({
       GlobalError,
       createDynamicallyTrackedSearchParams,
     },
-    staticGenerationStore: { urlPathname },
+    staticGenerationStore: { url },
     requestId,
     res,
   } = ctx
 
   const [MetadataTree] = createMetadataComponents({
     tree,
-    pathname: urlPathname,
+    pathname: url.pathname,
     trailingSlash: ctx.renderOpts.trailingSlash,
     errorType,
     query,
@@ -576,7 +576,7 @@ async function ReactServerError({
     <AppRouter
       buildId={ctx.renderOpts.buildId}
       assetPrefix={ctx.assetPrefix}
-      initialCanonicalUrl={urlPathname}
+      initialCanonicalUrl={url.pathname + url.search}
       initialTree={initialTree}
       initialHead={head}
       globalErrorComponent={GlobalError}
@@ -1473,7 +1473,11 @@ export const renderToHTMLOrFlight: AppPageRender = (
   query,
   renderOpts
 ) => {
-  const { pathname } = validateURL(req.url)
+  if (!req.url) {
+    throw new Error('Invalid URL')
+  }
+
+  const url = parseRelativeUrl(req.url, undefined, false)
 
   return RequestAsyncStorageWrapper.wrap(
     renderOpts.ComponentMod.requestAsyncStorage,
@@ -1482,7 +1486,7 @@ export const renderToHTMLOrFlight: AppPageRender = (
       StaticGenerationAsyncStorageWrapper.wrap(
         renderOpts.ComponentMod.staticGenerationAsyncStorage,
         {
-          urlPathname: pathname,
+          url,
           renderOpts,
           requestEndedState: { ended: false },
         },
