@@ -15,13 +15,14 @@ bench = false
 workspace = true
 
 [dependencies]
-next-core = { workspace = true }
+next-core = { workspace = true, features = ["native-tls"]}
 next-api = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 turbo-tasks-malloc = { workspace = true, default-features = false }
 turbopack-binding = { workspace = true, features = [
+  "__turbo_tasks_fetch",
   "__turbo_tasks",
   "__turbo_tasks_memory",
   "__turbo_tasks_env",

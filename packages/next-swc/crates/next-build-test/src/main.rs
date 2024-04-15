@@ -41,9 +41,14 @@ async fn main_inner() -> Result<()> {
 
     let entrypoints = project.entrypoints().await?;
 
-    // TODO select 100 by pseudo random
     // TODO run 10 in parallel
-    for (name, route) in entrypoints.routes.iter().take(100) {
+    // select 100 by pseudo random
+    let routes = entrypoints.routes.iter().collect::<Vec<_>>();
+    let count = routes.len();
+    for chunk in routes.chunks_exact(count * 2) {
+        let &[(name, route), ..] = chunk else {
+            continue;
+        };
         println!("{name}");
         match route {
             Route::Page {

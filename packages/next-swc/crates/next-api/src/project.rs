@@ -1,4 +1,4 @@
-use std::{fs, path::MAIN_SEPARATOR};
+use std::path::MAIN_SEPARATOR;
 
 use anyhow::Result;
 use indexmap::{map::Entry, IndexMap};
