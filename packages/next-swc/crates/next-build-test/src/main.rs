@@ -43,12 +43,12 @@ async fn main_inner() -> Result<()> {
 
     // TODO run 10 in parallel
     // select 100 by pseudo random
-    let routes = entrypoints.routes.iter().collect::<Vec<_>>();
-    let count = routes.len();
-    for chunk in routes.chunks_exact(count * 2) {
-        let &[(name, route), ..] = chunk else {
-            continue;
-        };
+    let routes = entrypoints
+        .routes
+        .iter()
+        .filter(|(name, _)| name.contains("home"))
+        .collect::<Vec<_>>();
+    for (name, route) in routes {
         println!("{name}");
         match route {
             Route::Page {
@@ -77,7 +77,6 @@ async fn main_inner() -> Result<()> {
         }
     }
 
-    // do stuff
     Ok(())
 }
 
