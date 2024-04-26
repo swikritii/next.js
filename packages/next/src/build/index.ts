@@ -1917,18 +1917,18 @@ export default async function build(
           config.experimental.gzipSize
         )
 
-        const middlewareManifest: MiddlewareManifest = require(path.join(
-          distDir,
-          SERVER_DIRECTORY,
-          MIDDLEWARE_MANIFEST
-        ))
+        const middlewareManifest: MiddlewareManifest = require(
+          path.join(distDir, SERVER_DIRECTORY, MIDDLEWARE_MANIFEST)
+        )
 
         const actionManifest = appDir
-          ? (require(path.join(
-              distDir,
-              SERVER_DIRECTORY,
-              SERVER_REFERENCE_MANIFEST + '.json'
-            )) as ActionManifest)
+          ? (require(
+              path.join(
+                distDir,
+                SERVER_DIRECTORY,
+                SERVER_REFERENCE_MANIFEST + '.json'
+              )
+            ) as ActionManifest)
           : null
         const entriesWithAction = actionManifest ? new Set() : null
         if (actionManifest && entriesWithAction) {
@@ -3314,8 +3314,8 @@ export default async function build(
             fallback: ssgBlockingFallbackPages.has(tbdRoute)
               ? null
               : ssgStaticFallbackPages.has(tbdRoute)
-              ? `${normalizedRoute}.html`
-              : false,
+                ? `${normalizedRoute}.html`
+                : false,
             dataRouteRegex: normalizeRouteRegex(
               getNamedRouteRegex(
                 dataRoute.replace(/\.json$/, ''),

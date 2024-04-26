@@ -290,29 +290,24 @@ export function createRSCAliases(
 
   if (isEdgeServer) {
     if (layer === WEBPACK_LAYERS.reactServerComponents) {
-      alias[
-        'react$'
-      ] = `next/dist/compiled/react${bundledReactChannel}/react.react-server`
-      alias[
-        'react-dom$'
-      ] = `next/dist/compiled/react-dom${bundledReactChannel}/react-dom.react-server`
+      alias['react$'] =
+        `next/dist/compiled/react${bundledReactChannel}/react.react-server`
+      alias['react-dom$'] =
+        `next/dist/compiled/react-dom${bundledReactChannel}/react-dom.react-server`
     } else {
       // x-ref: https://github.com/facebook/react/pull/25436
-      alias[
-        'react-dom$'
-      ] = `next/dist/compiled/react-dom${bundledReactChannel}/server-rendering-stub`
+      alias['react-dom$'] =
+        `next/dist/compiled/react-dom${bundledReactChannel}/server-rendering-stub`
     }
   }
 
   if (reactProductionProfiling) {
-    alias[
-      'react-dom$'
-    ] = `next/dist/compiled/react-dom${bundledReactChannel}/profiling`
+    alias['react-dom$'] =
+      `next/dist/compiled/react-dom${bundledReactChannel}/profiling`
   }
 
-  alias[
-    '@vercel/turbopack-ecmascript-runtime/dev/client/hmr-client.ts'
-  ] = `next/dist/client/dev/noop-turbopack-hmr`
+  alias['@vercel/turbopack-ecmascript-runtime/dev/client/hmr-client.ts'] =
+    `next/dist/client/dev/noop-turbopack-hmr`
 
   return alias
 }

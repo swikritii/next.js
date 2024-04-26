@@ -17,8 +17,8 @@ describe('esm-externals', () => {
       const expectedHtml = isTurbopack
         ? /Hello World\+World\+World\+World\+World\+World/
         : url === '/static'
-        ? /Hello World\+World\+Alternative\+World\+World\+World/
-        : /Hello World\+World\+Alternative\+World\+World\+Alternative/
+          ? /Hello World\+World\+Alternative\+World\+World\+World/
+          : /Hello World\+World\+Alternative\+World\+World\+Alternative/
       // TODO fix webpack behavior
       const expectedText =
         isTurbopack || url === '/static'
