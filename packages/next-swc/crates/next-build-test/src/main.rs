@@ -2,6 +2,11 @@
 #![feature(min_specialization)]
 #![feature(arbitrary_self_types)]
 
+use std::{
+    io::{stdout, Write},
+    time::Instant,
+};
+
 use anyhow::Result;
 use next_api::{
     project::{ProjectContainer, ProjectOptions},
@@ -37,9 +42,13 @@ async fn main_inner() -> Result<()> {
 
     let options = ProjectOptions { ..data };
 
+    let start = Instant::now();
     let project = ProjectContainer::new(options);
+    println!("ProjectContainer::new {:?}", start.elapsed());
 
+    let start = Instant::now();
     let entrypoints = project.entrypoints().await?;
+    println!("project.entrypoints {:?}", start.elapsed());
 
     // TODO run 10 in parallel
     // select 100 by pseudo random
@@ -49,7 +58,9 @@ async fn main_inner() -> Result<()> {
         .filter(|(name, _)| name.contains("home"))
         .collect::<Vec<_>>();
     for (name, route) in routes {
-        println!("{name}");
+        let start = Instant::now();
+        print!("{name}");
+        stdout().flush().unwrap();
         match route {
             Route::Page {
                 html_endpoint,
@@ -75,6 +86,7 @@ async fn main_inner() -> Result<()> {
                 println!("WARN: conflict {}", name);
             }
         }
+        println!(" {:?}", start.elapsed());
     }
 
     Ok(())
