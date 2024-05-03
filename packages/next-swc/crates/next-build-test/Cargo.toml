@@ -15,7 +15,6 @@ bench = false
 workspace = true
 
 [dependencies]
-next-core = { workspace = true, features = ["native-tls"]}
 next-api = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
@@ -38,6 +37,13 @@ turbopack-binding = { workspace = true, features = [
   "__turbopack_node",
 ] }
 turbo-tasks = { workspace = true }
+
+# Enable specific tls features per-target.
+[target.'cfg(all(target_os = "windows", target_arch = "aarch64"))'.dependencies]
+next-core = { workspace = true, features = ["native-tls"] }
+
+[target.'cfg(not(any(all(target_os = "windows", target_arch = "aarch64"), target_arch="wasm32")))'.dependencies]
+next-core = { workspace = true, features = ["rustls-tls"] }
 
 [build-dependencies]
 turbopack-binding = { workspace = true, features = ["__turbo_tasks_build"] }
