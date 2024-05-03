@@ -29,7 +29,13 @@ fn main() {
         .unwrap()
         .block_on(async {
             let tt = TurboTasks::new(MemoryBackend::new(usize::MAX));
-            tt.run_once(main_inner()).await
+            let r = tt.run_once(main_inner()).await;
+
+            let start = Instant::now();
+            drop(tt);
+            println!("drop {:?}", start.elapsed());
+
+            r
         })
         .unwrap();
 }
