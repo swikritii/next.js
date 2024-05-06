@@ -4,7 +4,8 @@
 
 use std::{
     io::{stdout, Write},
-    time::Instant,
+    thread::sleep,
+    time::{Duration, Instant},
 };
 
 use anyhow::Result;
@@ -12,7 +13,7 @@ use next_api::{
     project::{ProjectContainer, ProjectOptions},
     route::{Endpoint, Route},
 };
-use turbo_tasks::TurboTasks;
+use turbo_tasks::{TransientInstance, TurboTasks, TurboTasksApi, Vc};
 use turbo_tasks_malloc::TurboMalloc;
 use turbopack_binding::turbo::tasks_memory::MemoryBackend;
 
@@ -29,7 +30,7 @@ fn main() {
         .unwrap()
         .block_on(async {
             let tt = TurboTasks::new(MemoryBackend::new(usize::MAX));
-            let r = tt.run_once(main_inner()).await;
+            let r = main_inner(&tt).await;
 
             let start = Instant::now();
             drop(tt);
@@ -40,7 +41,7 @@ fn main() {
         .unwrap();
 }
 
-async fn main_inner() -> Result<()> {
+async fn main_inner(tt: &TurboTasks<MemoryBackend>) -> Result<()> {
     register();
 
     let mut file = std::fs::File::open("project_options.json")?;
@@ -49,50 +50,100 @@ async fn main_inner() -> Result<()> {
     let options = ProjectOptions { ..data };
 
     let start = Instant::now();
-    let project = ProjectContainer::new(options);
+    let project = tt
+        .run_once(async { Ok(ProjectContainer::new(options)) })
+        .await?;
     println!("ProjectContainer::new {:?}", start.elapsed());
 
     let start = Instant::now();
-    let entrypoints = project.entrypoints().await?;
+    let entrypoints = tt
+        .run_once(async move { Ok(project.entrypoints().await?) })
+        .await?;
     println!("project.entrypoints {:?}", start.elapsed());
 
     // TODO run 10 in parallel
     // select 100 by pseudo random
-    let routes = entrypoints
-        .routes
-        .iter()
-        .filter(|(name, _)| name.contains("home"))
-        .collect::<Vec<_>>();
-    for (name, route) in routes {
-        let start = Instant::now();
+    let selected_routes = [
+        "/app-future/[lang]/home/[experiments]",
+        "/api/feature-flags",
+        "/api/show-consent-banner",
+        "/api/jwt",
+        "/api/exp",
+    ];
+    for name in selected_routes {
+        let route = entrypoints.routes.get(name).unwrap().clone();
         print!("{name}");
         stdout().flush().unwrap();
-        match route {
-            Route::Page {
-                html_endpoint,
-                data_endpoint: _,
-            } => {
-                html_endpoint.write_to_disk().await?;
-            }
-            Route::PageApi { endpoint } => {
-                endpoint.write_to_disk().await?;
-            }
-            Route::AppPage(routes) => {
-                for route in routes {
-                    route.html_endpoint.write_to_disk().await?;
+        let start = Instant::now();
+        tt.run_once(async move {
+            Ok(match route {
+                Route::Page {
+                    html_endpoint,
+                    data_endpoint: _,
+                } => {
+                    html_endpoint.write_to_disk().await?;
                 }
-            }
-            Route::AppRoute {
-                original_name: _,
-                endpoint,
-            } => {
-                endpoint.write_to_disk().await?;
-            }
-            Route::Conflict => {
-                println!("WARN: conflict {}", name);
-            }
-        }
+                Route::PageApi { endpoint } => {
+                    endpoint.write_to_disk().await?;
+                }
+                Route::AppPage(routes) => {
+                    for route in routes {
+                        route.html_endpoint.write_to_disk().await?;
+                    }
+                }
+                Route::AppRoute {
+                    original_name: _,
+                    endpoint,
+                } => {
+                    endpoint.write_to_disk().await?;
+                }
+                Route::Conflict => {
+                    println!("WARN: conflict {}", name);
+                }
+            })
+        })
+        .await?;
         println!(" {:?}", start.elapsed());
+    }
+
+    let session = TransientInstance::new(());
+    let idents = tt
+        .run_once(async move { Ok(project.hmr_identifiers().await?) })
+        .await?;
+    let start = Instant::now();
+    let mut i = 0;
+    for ident in idents {
+        let session = session.clone();
+        let start = Instant::now();
+        let task = tt.spawn_root_task(move || {
+            let session = session.clone();
+            async move {
+                let project = project.project();
+                project
+                    .hmr_update(
+                        ident.clone(),
+                        project.hmr_version_state(ident.clone(), session),
+                    )
+                    .await?;
+                Ok(Vc::<()>::cell(()))
+            }
+        });
+        tt.wait_task_completion(task, true).await?;
+        let e = start.elapsed();
+        if e.as_millis() > 10 {
+            println!("HMR: {:?} {:?}", ident, e);
+        }
+        i += 1;
+        if i > 20 {
+            break;
+        }
+    }
+    println!("HMR {:?}", start.elapsed());
+
+    println!("Done");
+
+    loop {
+        sleep(Duration::from_secs(1000));
     }
 
     Ok(())
