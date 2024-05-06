@@ -443,7 +443,10 @@ async function createComponentTreeInternal({
               injectedJS: injectedJSWithCurrentLayout,
               injectedFontPreloadTags: injectedFontPreloadTagsWithCurrentLayout,
               asNotFound,
-              metadataOutlet,
+              // The metadataOutlet is responsible for throwing any errors that were caught during metadata resolution.
+              // We only want to render an outlet once per segment, as otherwise the error will be triggered
+              // multiple times causing an uncaught error.
+              metadataOutlet: isChildrenRouteKey ? metadataOutlet : undefined,
               ctx,
               missingSlots,
             })
