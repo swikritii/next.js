@@ -50,6 +50,7 @@ use turbopack_binding::{
         ecmascript::{
             chunk::{EcmascriptChunkPlaceable, EcmascriptChunkingContext},
             resolve::esm_resolve,
+            tree_shake::asset::EcmascriptModulePartAsset,
             EcmascriptModuleAsset,
         },
         nodejs::{EntryChunkGroupResult, NodeJsChunkingContext},
@@ -630,7 +631,7 @@ impl PageEndpoint {
             );
 
             let Some(client_module) =
-                Vc::try_resolve_downcast_type::<EcmascriptModuleAsset>(client_module).await?
+                Vc::try_resolve_downcast_type::<EcmascriptModulePartAsset>(client_module).await?
             else {
                 bail!("expected an ECMAScript module asset");
             };
@@ -655,7 +656,8 @@ impl PageEndpoint {
             .context("expected next/dist/client/next-dev-turbopack.js to resolve to a module")?;
 
             let Some(client_main_module) =
-                Vc::try_resolve_downcast_type::<EcmascriptModuleAsset>(client_main_module).await?
+                Vc::try_resolve_downcast_type::<EcmascriptModulePartAsset>(client_main_module)
+                    .await?
             else {
                 bail!("expected an ECMAScript module asset");
             };
